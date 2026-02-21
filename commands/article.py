@@ -1,15 +1,18 @@
+from pymongo.errors import DuplicateKeyError
+
+
 class ArticleCommands:
     def __init__(self, bot, db):
         self.bot = bot
         self.db = db
 
     def register_commands(self):
-        self.bot.command_handler(['save'])(self.save_command)
-        self.bot.command_handler(['remove'])(self.remove_command)
-        self.bot.command_handler(['list'])(self.list_command)
-        self.bot.command_handler(['create'])(self.create_command)
-        self.bot.command_handler(['edit'])(self.edit_command)
-        self.bot.command_handler(['delete'])(self.delete_command)
+        self.bot.message_handler(commands=['save'])(self.save_command)
+        self.bot.message_handler(commands=['remove'])(self.remove_command)
+        self.bot.message_handler(commands=['list'])(self.list_command)
+        self.bot.message_handler(commands=['create'])(self.create_command)
+        self.bot.message_handler(commands=['edit'])(self.edit_command)
+        self.bot.message_handler(commands=['delete'])(self.delete_command)
 
     def save_command(self, message):
         user = self._check_user_registered(message)
@@ -60,11 +63,15 @@ class ArticleCommands:
 
         author = message.from_user.id
 
-        self.db.articles.insert_one({
-            "name": name,
-            "content": content,
-            "author": author,
-        })
+        try:
+            self.db.articles.insert_one({
+                "name": name,
+                "content": content,
+                "author": author,
+            })
+            self.bot.reply_to(message, f"Article **{name}** has been created.", parse_mode="Markdown")
+        except DuplicateKeyError:
+            self.bot.reply_to(message, f"An article with the name **{name}** already exists.", parse_mode="Markdown")
 
     def edit_command(self, message):
         name, content = self._parse_command_args(message)
@@ -79,6 +86,7 @@ class ArticleCommands:
                 "content": content,
             }
         })
+        self.bot.reply_to(message, f"Article **{name}** has been updated.", parse_mode="Markdown")
 
     def delete_command(self, message):
         name = self._parse_command_args(message)
@@ -87,6 +95,7 @@ class ArticleCommands:
             return
 
         self.db.articles.delete_one({"name": name})
+        self.bot.reply_to(message, f"Article **{name}** has been deleted.", parse_mode="Markdown")
 
     @staticmethod
     def _parse_command_args(message):

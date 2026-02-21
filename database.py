@@ -8,7 +8,7 @@ from config import MONGO_DB_URI
 class DatabaseManager:
     def __init__(self):
         self.client = MongoClient(MONGO_DB_URI, server_api=ServerApi('1'))
-        self.db = self.client['rewikibot']
+        self.db = self.client['WikiDatabase']
         self._init_collections()
         self._init_indexes()
 
@@ -21,10 +21,8 @@ class DatabaseManager:
 
 
     def _init_indexes(self):
-        self.db.users.create_index('chat_id', unique=True)
-        self.db.users.create_index('username')
-        self.db.articles.create_index('chat_id')
-        self.db.articles.create_index('timestamp')
+        self.db.users.create_index('uid', unique=True)
+        self.db.articles.create_index('name', unique=True)
 
     def close(self):
         self.client.close()

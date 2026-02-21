@@ -1,20 +1,18 @@
-from config import TOKEN, MONGO_DB_URI
+from config import TOKEN
+from database import db
+from commands.base import BaseCommands
+from commands.article import ArticleCommands
 
-from pymongo.mongo_client import MongoClient
-from pymongo.server_api import ServerApi
 from telebot import TeleBot
 
 bot = TeleBot(TOKEN)
 
-uri = MONGO_DB_URI
+base_commands = BaseCommands(bot, db)
+base_commands.register_commands()
 
-client = MongoClient(uri, server_api=ServerApi('1'))
+article_commands = ArticleCommands(bot, db)
+article_commands.register_commands()
 
-try:
-    client.admin.command('ping')
-    print("Pinged your deployment. You successfully connected to MongoDB!")
-except Exception as e:
-    print(e)
 
 if __name__ == "__main__":
     bot.infinity_polling()

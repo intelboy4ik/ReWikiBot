@@ -5,7 +5,8 @@ class BaseCommands:
         self.db = db
 
     def register_commands(self):
-        self.bot.command_handler(['start'])(self.start_command)
+        self.bot.message_handler(commands=['start'])(self.start_command)
+        self.bot.message_handler(commands=['help'])(self.help_command)
 
     def start_command(self, message):
         user_id = message.from_user.id
