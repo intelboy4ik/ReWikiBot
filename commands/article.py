@@ -3,6 +3,8 @@ from pymongo.errors import DuplicateKeyError
 from telebot import types
 from datetime import datetime
 
+from config import check_user_registered, check_user_mod_status, parse_command_args
+
 
 class ArticleCommands:
     def __init__(self, bot, db):
@@ -24,11 +26,11 @@ class ArticleCommands:
         self.bot.message_handler(commands=['delete'])(self.delete_command)
 
     def save_command(self, message):
-        user = self._check_user_registered(message)
+        user = check_user_registered(self.bot, self.db, message)
         if not user:
             return
 
-        name, _ = self._parse_command_args(message)
+        name, _ = parse_command_args(message)
         if not name or not self._check_article_exists(name, message):
             return
 
@@ -48,11 +50,11 @@ class ArticleCommands:
         self.bot.reply_to(message, reply_text[user["language"]], parse_mode="Markdown")
 
     def remove_command(self, message):
-        user = self._check_user_registered(message)
+        user = check_user_registered(self.bot, self.db, message)
         if not user:
             return
 
-        name, _ = self._parse_command_args(message)
+        name, _ = parse_command_args(message)
         if not name or not self._check_article_exists(name, message):
             return
 
@@ -72,7 +74,7 @@ class ArticleCommands:
         self.bot.reply_to(message, reply_text[user["language"]], parse_mode="Markdown")
 
     def list_command(self, message):
-        user = self._check_user_registered(message)
+        user = check_user_registered(self.bot, self.db, message)
         if not user:
             return
 
@@ -87,7 +89,7 @@ class ArticleCommands:
         self.bot.reply_to(message, reply_text[user["language"]], reply_markup=markup)
 
     def search_command(self, message):
-        user = self._check_user_registered(message)
+        user = check_user_registered(self.bot, self.db, message)
         if not user:
             return
 
@@ -110,7 +112,7 @@ class ArticleCommands:
         self.bot.reply_to(message, reply_text[user['language']], reply_markup=markup, parse_mode="Markdown")
 
     def article_callback_handler(self, call):
-        user = self._check_user_registered(call)
+        user = check_user_registered(self.bot, self.db, call)
         article_id = call.data.split("_")[1]
         article = self.db.articles.find_one({"_id": ObjectId(article_id)})
 
@@ -133,7 +135,7 @@ class ArticleCommands:
     def pagination_callback_handler(self, call):
         data_parts = call.data.split("_")
         page = int(data_parts[2])
-        user = self._check_user_registered(call)
+        user = check_user_registered(self.bot, self.db, call)
         if not user:
             return
 
@@ -147,11 +149,11 @@ class ArticleCommands:
         )
 
     def create_command(self, message):
-        user = self._check_user_registered(message)
-        if not user or not self._check_user_mod_status(user, message):
+        user = check_user_registered(self.bot, self.db, message)
+        if not user or not check_user_mod_status(self.bot, user, message):
             return
 
-        name, content = self._parse_command_args(message)
+        name, content = parse_command_args(message)
         if not name or not content:
             reply_text = {
                 "en": "Usage: /create <name> <content>",
@@ -189,11 +191,11 @@ class ArticleCommands:
             self.bot.reply_to(message, reply_text[user["language"]], parse_mode="Markdown")
 
     def edit_command(self, message):
-        user = self._check_user_registered(message)
-        if not user or not self._check_user_mod_status(user, message):
+        user = check_user_registered(self.bot, self.db, message)
+        if not user or not check_user_mod_status(seelf.bot, user, message):
             return
 
-        name, content = self._parse_command_args(message)
+        name, content = parse_command_args(message)
         if not name or not content:
             reply_text = {
                 "en": "Usage: /edit <name> <content>",
@@ -219,11 +221,11 @@ class ArticleCommands:
         self.bot.reply_to(message, reply_text[user['language']], parse_mode="Markdown")
 
     def delete_command(self, message):
-        user = self._check_user_registered(message)
-        if not user or not self._check_user_mod_status(user, message):
+        user = check_user_registered(self.bot, self.db, message)
+        if not user or not check_user_mod_status(self.bot, user, message):
             return
 
-        name, _ = self._parse_command_args(message)
+        name, _ = parse_command_args(message)
         if not name:
             reply_text = {
                 "en": "Usage: /delete <name>",
@@ -250,35 +252,6 @@ class ArticleCommands:
         }
         self.bot.reply_to(message, reply_text[user['language']], parse_mode="Markdown")
 
-    @staticmethod
-    def _parse_command_args(message):
-        parts = message.text.split(" ")
-        if len(parts) < 2:
-            return None, None
-        name = parts[1]
-        content = " ".join(parts[2:]) if len(parts) > 2 else ""
-        return name, content
-
-    def _check_user_registered(self, obj):
-        user_id = obj.from_user.id if hasattr(obj, 'from_user') else obj.message.from_user.id
-        user = self.db.users.find_one({"uid": user_id})
-        if not user:
-            self.bot.reply_to(
-                obj,
-                "You need to start the bot first using /start. / Для начала воспользуйтесь командой /start."
-            )
-            return None
-        return user
-
-    def _check_user_mod_status(self, user, message):
-        if not user["moderator"]:
-            self.bot.reply_to(
-                message,
-                "You should be moderator to use this command! / Вы должны быть модератором чтобы использовать эту команду!"
-            )
-            return False
-        return True
-
     def _check_article_exists(self, name, message):
         article = self.db.articles.find_one({"name": name})
         if not article:
@@ -301,7 +274,8 @@ class ArticleCommands:
                 articles.append(article)
         return articles
 
-    def _build_articles_markup(self, articles, page):
+    @staticmethod
+    def _build_articles_markup(articles, page):
         markup = types.InlineKeyboardMarkup()
         start_index = page * 10
         end_index = start_index + 10

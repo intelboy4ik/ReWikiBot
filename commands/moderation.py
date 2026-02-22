@@ -1,3 +1,5 @@
+from config import check_user_registered, check_user_mod_status, parse_command_args
+
 class ModCommands:
     def __init__(self, bot, db):
         self.bot = bot
@@ -8,59 +10,22 @@ class ModCommands:
         self.bot.message_handler(commands=["unmod"])(self.remove_moderator_command)
 
     def add_moderator_command(self, message):
-        user = self._check_user_registered(message)
-        if not user:
+        user = check_user_registered(self.bot, self.db, message)
+        if not user or not check_user_mod_status(self.bot, user, message):
             return
 
-        if not self._check_user_mod_status(user, message):
-            return
-
-        user_id = self._parse_command_args(message)
+        user_id, _ = parse_command_args(message)
         self._update_user_mod_status(user_id, "add")
         self.bot.reply_to(message, "Successfully added moderator status to user")
 
     def remove_moderator_command(self, message):
-        user = self._check_user_registered(message)
-        if not user:
+        user = check_user_registered(self.bot, self.db, message)
+        if not user or not check_user_mod_status(self.bot, user, message):
             return
 
-        if not self._check_user_mod_status(user, message):
-            return
-
-        user_id = self._parse_command_args(message)
+        user_id, _ = parse_command_args(message)
         self._update_user_mod_status(user_id, "remove")
         self.bot.reply_to(message, "Successfully removed moderator status to user")
-
-    @staticmethod
-    def _parse_command_args(message):
-        parts = message.text.split(" ")
-        if len(parts) < 2:
-            return None, None
-        user_id = parts[1]
-        return user_id
-
-    def _check_user_registered(self, message):
-        user = self.db.users.find_one({"uid": message.from_user.id})
-        if not user:
-            self.bot.reply_to(
-                message,
-                "You need to start the bot first using /start."
-                " / "
-                "Для начала воспользуйтесь командой /start."
-            )
-            return None
-        return user
-
-    def _check_user_mod_status(self, user, message):
-        if not user["moderator"]:
-            self.bot.reply_to(
-                message,
-                "You should be moderator to use this command! "
-                " / "
-                "Вы должны быть модератором чтобы использовать эту команду!"
-            )
-            return None
-        return user
 
     def _update_user_mod_status(self, user_id, action):
         if action == "add":

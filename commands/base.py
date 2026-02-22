@@ -1,5 +1,7 @@
 from telebot import types
 
+from config import check_user_registered
+
 
 class BaseCommands:
     def __init__(self, bot, db):
@@ -10,6 +12,7 @@ class BaseCommands:
         self.bot.message_handler(commands=['start'])(self.start_command)
         self.bot.message_handler(commands=['help'])(self.help_command)
         self.bot.message_handler(commands=['language'])(self.language_command)
+        self.bot.message_handler(commands=["/donate"])(self.donate_command)
         self.bot.callback_query_handler(func=lambda call: call.data in ["set_en", "set_ru"])(
             self.language_callback_handler)
 
@@ -20,7 +23,7 @@ class BaseCommands:
         self.bot.reply_to(message, "Welcome to the ReWiki Bot! Use /help to see available commands.")
 
     def help_command(self, message):
-        user = self._check_user_registered(message)
+        user = check_user_registered(self.bot, self.db, message)
         if not user:
             return
 
@@ -62,7 +65,7 @@ class BaseCommands:
         self.bot.reply_to(message, help_text[user["language"]])
 
     def language_command(self, message):
-        user = self._check_user_registered(message)
+        user = check_user_registered(self.bot, self.db, message)
         if not user:
             return
 
@@ -93,15 +96,30 @@ class BaseCommands:
         self.bot.reply_to(message, info_text[user["language"]], reply_markup=markup)
 
     def language_callback_handler(self, call):
-        user = self._check_user_registered(call)
+        user = check_user_registered(self.bot, self.db, call)
         if call.data == "set_en":
             self.db.users.update_one({"uid": user["uid"]}, {"$set": {"language": "en"}})
         else:
             self.db.users.update_one({"uid": user["uid"]}, {"$set": {"language": "ru"}})
 
-    def _check_user_registered(self, callback):
-        user = self.db.users.find_one({"uid": callback.from_user.id})
+    def donate_command(self, message):
+        user = check_user_registered(self.bot, self.db, message)
         if not user:
-            self.bot.reply_to(callback, "You need to start the bot first using /start.")
-            return None
-        return user
+            return
+
+        donate_text = {
+            "en": (
+                "If you want to support the project, you can donate using the following methods:\n"
+                "1. Boosty: nothing here...\n"
+                "2. Hipolink: https://hipolink.net/intelboy"
+                "3. Cryptocurrency: nothing here...\n"
+            ),
+            "ru": (
+                "Если вы хотите поддержать проект, вы можете пожертвовать с помощью следующих методов:\n"
+                "1. Boosty: а тут пока пусто(\n"
+                "2. Hipolink: https://hipolink.net/intelboy\n"
+                "3. Криптовалюта: а тут пока пусто(\n"
+            )
+        }
+
+        self.bot.reply_to(message, donate_text[user["language"]])
