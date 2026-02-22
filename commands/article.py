@@ -25,13 +25,23 @@ class ArticleCommands:
 
         if not self._check_article_exists(name, message):
             return
+        
+        reply_text = {
+            "en": f"Article **{name}** is already in your saved list.",
+            "ru": f"Статья **{name} уже в избранных."
+        }
 
         if name in user["saved_articles"]:
-            self.bot.reply_to(message, f"Article **{name}** is already in your saved list.", parse_mode="Markdown")
+            self.bot.reply_to(message, reply_text[user['lang']], parse_mode="Markdown")
             return
 
+        reply_text = {
+            "en":  f"Article **{name}** has been saved to your list.",
+            "ru": f"Статья **{name} добавлена в избранное."
+        }
+
         self._update_user_articles(user["uid"], name, "add")
-        self.bot.reply_to(message, f"Article **{name}** has been saved to your list.", parse_mode="Markdown")
+        self.bot.reply_to(message, reply_text[user["lang"]], parse_mode="Markdown")
 
     def remove_command(self, message):
         user = self._check_user_registered(message)
@@ -45,12 +55,22 @@ class ArticleCommands:
         if not self._check_article_exists(name, message):
             return
 
+        reply_text = {
+            "en": f"Article **{name}** is not in your list.",
+            "ru": f"Статья **{name}** отсутствует в ваших избранных."
+        }
+
         if name not in user["saved_articles"]:
-            self.bot.reply_to(message, f"Article **{name}** is not in your list.", parse_mode="Markdown")
+            self.bot.reply_to(message, reply_text[user["lang"]], parse_mode="Markdown")
             return
 
+        reply_text = {
+            "en": f"Article **{name}** has been removed from your list.",
+            "ru": f"Статья **{name}** удалена из вашего избранных."
+        }
+
         self._update_user_articles(user["uid"], name, "remove")
-        self.bot.reply_to(message, f"Article **{name}** has been removed from your list.", parse_mode="Markdown")
+        self.bot.reply_to(message, reply_text[user["lang"]], parse_mode="Markdown")
 
     def list_command(self, message):
         pass
@@ -63,10 +83,25 @@ class ArticleCommands:
         if not self._check_user_mod_status(user, message):
             return
 
-        name, content = self._parse_command_args(message)
+        reply_text = {
+            "en": f"Usage: /create <name> <content>",
+            "ru": f"Использование: /create <название> <контент>."
+        }
+
+        name, content = self._parse_command_args(message, user)
         if not name or not content:
-            self.bot.reply_to(message, "Usage: /create <name> <content>")
+            self.bot.reply_to(message, reply_text[user["lang"]])
             return
+
+        reply_text = {
+            "en": f"Maximum article length is 512 symbols.",
+            "ru": f"Максимальная длинна статьи 512 символов."
+        }
+
+        if len(content) > 512:
+            self.bot.reply_to(message, reply_text[user["lang"]], parse_mode="Markdown")
+            return
+
 
         author = message.from_user.id
 
@@ -76,9 +111,21 @@ class ArticleCommands:
                 "content": content,
                 "author": author,
             })
-            self.bot.reply_to(message, f"Article **{name}** has been created.", parse_mode="Markdown")
+            
+            reply_text = {
+                "en": f"Article **{name}** has been created.",
+                "ru": f"Статья **{name}** создана."
+            }
+            
+            self.bot.reply_to(message, reply_text[user["lang"]], parse_mode="Markdown")
         except DuplicateKeyError:
-            self.bot.reply_to(message, f"An article with the name **{name}** already exists.", parse_mode="Markdown")
+
+            reply_text = {
+                "en": f"An article with the name **{name}** already exists.",
+                "ru": f"Статья с названием **{name}** уже существует."
+            }
+            
+            self.bot.reply_to(message, reply_text[user["lang"]], parse_mode="Markdown")
 
     def edit_command(self, message):
         user = self._check_user_registered(message)
@@ -88,9 +135,23 @@ class ArticleCommands:
         if not self._check_user_mod_status(user, message):
             return
 
-        name, content = self._parse_command_args(message)
+        reply_text = {
+            "en": f"Usage: /create <name> <content>",
+            "ru": f"Использование: /create <название> <контент>."
+        }
+
+        name, content = self._parse_command_args(message, user)
         if not name or not content:
-            self.bot.reply_to(message, "Usage: /update <name> <content>")
+            self.bot.reply_to(message, reply_text[user["lang"]])
+            return
+
+        reply_text = {
+            "en": f"Maximum article length is 512 symbols.",
+            "ru": f"Максимальная длинна статьи 512 символов."
+        }
+
+        if len(content) > 512:
+            self.bot.reply_to(message, reply_text[user["lang"]], parse_mode="Markdown")
             return
 
         self.db.articles.update_one({
@@ -100,7 +161,13 @@ class ArticleCommands:
                 "content": content,
             }
         })
-        self.bot.reply_to(message, f"Article **{name}** has been updated.", parse_mode="Markdown")
+
+        reply_text = {
+            "en": f"Article **{name}** has been updated.",
+            "ru": f"Статья **{name}** обновлена."
+        }
+
+        self.bot.reply_to(message, reply_text[user['lang']], parse_mode="Markdown")
 
     def delete_command(self, message):
         user = self._check_user_registered(message)
@@ -110,16 +177,26 @@ class ArticleCommands:
         if not self._check_user_mod_status(user, message):
             return
 
+        reply_text = {
+            "en": f"Usage: /delete <name>",
+            "ru": f"Использование: /delete <название>."
+        }
+
         name = self._parse_command_args(message)
         if not name:
-            self.bot.reply_to(message, "Usage: /delete <name>")
+            self.bot.reply_to(message, reply_text)
             return
 
+        reply_text = {
+            "en": f"Article **{name}** has been deleted.",
+            "ru": f"Статья **{name}** удалена."
+        }
+
         self.db.articles.delete_one({"name": name})
-        self.bot.reply_to(message, f"Article **{name}** has been deleted.", parse_mode="Markdown")
+        self.bot.reply_to(message, reply_text[user['lang']], parse_mode="Markdown")
 
     @staticmethod
-    def _parse_command_args(message):
+    def _parse_command_args(message, user = None):
         parts = message.text.split(" ")
         if len(parts) < 2:
             return None, None

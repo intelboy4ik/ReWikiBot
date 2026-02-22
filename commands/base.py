@@ -9,14 +9,14 @@ class BaseCommands:
     def register_commands(self):
         self.bot.message_handler(commands=['start'])(self.start_command)
         self.bot.message_handler(commands=['help'])(self.help_command)
-        self.bot.message_handler(commands=['language'])(self.language_command)
+        self.bot.message_handler(commands=['lang'])(self.lang_command)
         self.bot.callback_query_handler(func=lambda call: call.data in ["set_en", "set_ru"])(
-            self.language_callback_handler)
+            self.lang_callback_handler)
 
     def start_command(self, message):
         user_id = message.from_user.id
         if not self.db.users.find_one({"uid": user_id}):
-            self.db.users.insert_one({"uid": user_id, "moderator": False, "language": "en", "saved_articles": []})
+            self.db.users.insert_one({"uid": user_id, "moderator": False, "lang": "en", "saved_articles": []})
         self.bot.reply_to(message, "Welcome to the ReWiki Bot! Use /help to see available commands.")
 
     def help_command(self, message):
@@ -32,7 +32,7 @@ class BaseCommands:
                 "/save <text> - Save an article\n"
                 "/remove <text> - Remove an article from your saved list\n"
                 "/list - List your saved articles\n"
-                "/language - Change your language settings\n"
+                "/lang - Change your lang settings\n"
             ),
             "ru": (
                 "Доступные команды:\n"
@@ -41,7 +41,7 @@ class BaseCommands:
                 "/save <text> - Сохранить статью\n"
                 "/remove <text> - Убрать статью из сохранённых\n"
                 "/list - Список сохранённых статей\n"
-                "/language - Изменить свои языковые настройки\n"
+                "/lang - Изменить свои языковые настройки\n"
             )
         }
 
@@ -59,9 +59,9 @@ class BaseCommands:
                 )
             }
 
-        self.bot.reply_to(message, help_text[user["language"]])
+        self.bot.reply_to(message, help_text[user["lang"]])
 
-    def language_command(self, message):
+    def lang_command(self, message):
         user = self._check_user_registered(message)
         if not user:
             return
@@ -81,8 +81,8 @@ class BaseCommands:
 
         info_text = {
             "en": (
-                "You opened language settings\n"
-                "Select your language:\n"
+                "You opened lang settings\n"
+                "Select your lang:\n"
             ),
             "ru": (
                 "Вы открыли настройки смены языка\n"
@@ -90,14 +90,14 @@ class BaseCommands:
             )
         }
 
-        self.bot.reply_to(message, info_text[user["language"]], reply_markup=markup)
+        self.bot.reply_to(message, info_text[user["lang"]], reply_markup=markup)
 
-    def language_callback_handler(self, call):
+    def lang_callback_handler(self, call):
         user = self._check_user_registered(call)
         if call.data == "set_en":
-            self.db.users.update_one({"uid": user["uid"]}, {"$set": {"language": "en"}})
+            self.db.users.update_one({"uid": user["uid"]}, {"$set": {"lang": "en"}})
         else:
-            self.db.users.update_one({"uid": user["uid"]}, {"$set": {"language": "ru"}})
+            self.db.users.update_one({"uid": user["uid"]}, {"$set": {"lang": "ru"}})
 
     def _check_user_registered(self, callback):
         user = self.db.users.find_one({"uid": callback.from_user.id})
