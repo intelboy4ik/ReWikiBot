@@ -175,7 +175,7 @@ class ArticleCommands:
                 "name": name,
                 "content": content,
                 "author": message.from_user.id,
-                "created_at": datetime.now().date(),
+                "created_at": datetime.now().date().isoformat(),
                 "updated_at": None
             })
             reply_text = {
@@ -212,7 +212,7 @@ class ArticleCommands:
             self.bot.reply_to(message, reply_text[user["language"]])
             return
 
-        self.db.articles.update_one({"name": name}, {"$set": {"content": content, "updated_at": datetime.now().date()}})
+        self.db.articles.update_one({"name": name}, {"$set": {"content": content, "updated_at": datetime.now().date().isoformat()}})
 
         reply_text = {
             "en": f"Article *{name}* has been updated.",
