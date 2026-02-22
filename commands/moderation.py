@@ -1,5 +1,3 @@
-
-
 class ModCommands:
     def __init__(self, bot, db):
         self.bot = bot
@@ -44,13 +42,23 @@ class ModCommands:
     def _check_user_registered(self, message):
         user = self.db.users.find_one({"uid": message.from_user.id})
         if not user:
-            self.bot.reply_to(message, "You need to start the bot first using /start.")
+            self.bot.reply_to(
+                message,
+                "You need to start the bot first using /start."
+                " / "
+                "Для начала воспользуйтесь командой /start."
+            )
             return None
         return user
 
     def _check_user_mod_status(self, user, message):
         if not user["moderator"]:
-            self.bot.reply_to(message, "You should be moderator to use this command")
+            self.bot.reply_to(
+                message,
+                "You should be moderator to use this command! "
+                " / "
+                "Вы должны быть модератором чтобы использовать эту команду!"
+            )
             return None
         return user
 

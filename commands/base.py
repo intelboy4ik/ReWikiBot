@@ -31,7 +31,7 @@ class BaseCommands:
                 "/help - Show this help message\n"
                 "/save <text> - Save an article\n"
                 "/remove <text> - Remove an article from your saved list\n"
-                "/list - List your saved articles\n"
+                "/list - List of your saved articles\n"
                 "/lang - Change your lang settings\n"
             ),
             "ru": (
@@ -40,7 +40,7 @@ class BaseCommands:
                 "/help - Отобразить сообщение с помощью\n"
                 "/save <text> - Сохранить статью\n"
                 "/remove <text> - Убрать статью из сохранённых\n"
-                "/list - Список сохранённых статей\n"
+                "/list - Список избранных статей\n"
                 "/lang - Изменить свои языковые настройки\n"
             )
         }
