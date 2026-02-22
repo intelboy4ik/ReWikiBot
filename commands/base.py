@@ -20,9 +20,8 @@ class BaseCommands:
         self.bot.reply_to(message, "Welcome to the ReWiki Bot! Use /help to see available commands.")
 
     def help_command(self, message):
-        user = self._check_user_registered(message.from_user.id)
+        user = self._check_user_registered(message)
         if not user:
-            self.bot.reply_to(message, "Please register first")
             return
 
         help_text = {
@@ -63,19 +62,18 @@ class BaseCommands:
         self.bot.reply_to(message, help_text[user["language"]])
 
     def language_command(self, message):
-        user = self._check_user_registered(message.from_user.id)
+        user = self._check_user_registered(message)
         if not user:
-            self.bot.reply_to(message, "Please register first")
             return
 
         markup = types.InlineKeyboardMarkup()
         en_lang_button = types.InlineKeyboardButton(
-            text="English",
+            text="🇬🇧",
             callback_data="set_en"
         )
 
         ru_lang_button = types.InlineKeyboardButton(
-            text="Русский",
+            text="🇷🇺",
             callback_data="set_ru"
         )
 
@@ -95,13 +93,15 @@ class BaseCommands:
         self.bot.reply_to(message, info_text[user["language"]], reply_markup=markup)
 
     def language_callback_handler(self, call):
-        user = self._check_user_registered(call.from_user.id)
+        user = self._check_user_registered(call)
         if call.data == "set_en":
             self.db.users.update_one({"uid": user["uid"]}, {"$set": {"language": "en"}})
-            self.bot.answer_callback_query(call.id, "Your language is set!")
         else:
             self.db.users.update_one({"uid": user["uid"]}, {"$set": {"language": "ru"}})
-            self.bot.answer_callback_query(call.id, "Ваш язык установлен!")
 
-    def _check_user_registered(self, user_id):
-        return self.db.users.find_one({"uid": user_id})
+    def _check_user_registered(self, callback):
+        user = self.db.users.find_one({"uid": callback.from_user.id})
+        if not user:
+            self.bot.reply_to(callback, "You need to start the bot first using /start.")
+            return None
+        return user

@@ -56,6 +56,13 @@ class ArticleCommands:
         pass
 
     def create_command(self, message):
+        user = self._check_user_registered(message)
+        if not user:
+            return
+
+        if not self._check_user_mod_status(user, message):
+            return
+
         name, content = self._parse_command_args(message)
         if not name or not content:
             self.bot.reply_to(message, "Usage: /create <name> <content>")
@@ -74,6 +81,13 @@ class ArticleCommands:
             self.bot.reply_to(message, f"An article with the name **{name}** already exists.", parse_mode="Markdown")
 
     def edit_command(self, message):
+        user = self._check_user_registered(message)
+        if not user:
+            return
+
+        if not self._check_user_mod_status(user, message):
+            return
+
         name, content = self._parse_command_args(message)
         if not name or not content:
             self.bot.reply_to(message, "Usage: /update <name> <content>")
@@ -89,6 +103,13 @@ class ArticleCommands:
         self.bot.reply_to(message, f"Article **{name}** has been updated.", parse_mode="Markdown")
 
     def delete_command(self, message):
+        user = self._check_user_registered(message)
+        if not user:
+            return
+
+        if not self._check_user_mod_status(user, message):
+            return
+
         name = self._parse_command_args(message)
         if not name:
             self.bot.reply_to(message, "Usage: /delete <name>")
@@ -110,6 +131,12 @@ class ArticleCommands:
         user = self.db.users.find_one({"uid": message.from_user.id})
         if not user:
             self.bot.reply_to(message, "You need to start the bot first using /start.")
+            return None
+        return user
+
+    def _check_user_mod_status(self, user, message):
+        if not user["moderator"]:
+            self.bot.reply_to(message, "You should be moderator to use this command")
             return None
         return user
 
