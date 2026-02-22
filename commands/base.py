@@ -20,7 +20,7 @@ class BaseCommands:
         user_id = message.from_user.id
         if not self.db.users.find_one({"uid": user_id}):
             self.db.users.insert_one({"uid": user_id, "moderator": False, "language": "en", "saved_articles": []})
-        self.bot.reply_to(message, "Welcome to the ReWiki Bot! Use /help to see available commands.")
+        self.bot.reply_to(message, "Welcome to the ReWiki Bot! Use /help to see available commands. / Добро пожаловать в ReWiki Bot! Используйте /help чтобы увидеть доступные команды.")
 
     def help_command(self, message):
         user = check_user_registered(self.bot, self.db, message)
