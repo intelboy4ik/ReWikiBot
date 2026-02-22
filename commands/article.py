@@ -162,10 +162,10 @@ class ArticleCommands:
             self.bot.reply_to(message, reply_text[user["language"]])
             return
 
-        if len(content) > 512:
+        if len(content) > 768:
             reply_text = {
-                "en": "Maximum article length is 512 symbols.",
-                "ru": "Максимальная длинна статьи 512 символов."
+                "en": "Maximum article length is 768 symbols.",
+                "ru": "Максимальная длинна статьи 768 символов."
             }
             self.bot.reply_to(message, reply_text[user["language"]])
             return
@@ -204,10 +204,10 @@ class ArticleCommands:
             self.bot.reply_to(message, reply_text[user["language"]])
             return
 
-        if len(content) > 512:
+        if len(content) > 768:
             reply_text = {
-                "en": "Maximum article length is 512 symbols.",
-                "ru": "Максимальная длинна статьи 512 символов."
+                "en": "Maximum article length is 768 symbols.",
+                "ru": "Максимальная длинна статьи 768 символов."
             }
             self.bot.reply_to(message, reply_text[user["language"]])
             return
