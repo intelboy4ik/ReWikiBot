@@ -12,6 +12,7 @@ class ArticleCommands:
         self.bot.message_handler(commands=['save'])(self.save_command)
         self.bot.message_handler(commands=['remove'])(self.remove_command)
         self.bot.message_handler(commands=['list'])(self.list_command)
+        self.bot.message_handler(commands=['search'])(self.search_command)
         self.bot.callback_query_handler(func=lambda call: call.data.startswith("article_"))(
             self.article_callback_handler)
         self.bot.callback_query_handler(
@@ -79,17 +80,39 @@ class ArticleCommands:
 
         reply_text = {
             "en": "Your saved articles list:",
-            "ru": "Ваши избранные статьи: "
+            "ru": "Ваши избранные статьи:"
         }
 
         self.bot.reply_to(message, reply_text[user["lang"]], reply_markup=markup)
 
+    def search_command(self, message):
+        user = self._check_user_registered(message)
+        if not user:
+            return
+
+        query = message.text.split(" ")[1]
+        articles = list(self.db.articles.find({"name": {"$regex": query, "$options": "i"}}))
+        if not articles:
+            reply_text = {
+                "en": f"No articles found matching *{query}*.",
+                "ru": f"Статьи, соответствующие *{query}*, не найдены."
+            }
+            self.bot.reply_to(message, reply_text[user["lang"]], parse_mode="Markdown")
+            return
+
+        markup = self._build_articles_markup(articles, 0)
+        reply_text = {
+            "en": f"Search results for *{query}*:",
+            "ru": f"Результаты поиска по запросу *{query}*:"
+        }
+
+        self.bot.reply_to(message, reply_text[user['lang']], reply_markup=markup, parse_mode="Markdown")
+
     def article_callback_handler(self, call):
         article_id = call.data.split("_")[1]
         article = self.db.articles.find_one({"_id": ObjectId(article_id)})
-        self.bot.edit_message_text(
+        self.bot.send_message(
             chat_id=call.message.chat.id,
-            message_id=call.message.message_id,
             text=f"*{article['name']}*\n\n{article['content']}",
             parse_mode="Markdown"
         )
