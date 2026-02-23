@@ -35,6 +35,7 @@ class BaseCommands:
                 "/save <text> - Save an article\n"
                 "/remove <text> - Remove an article from your saved list\n"
                 "/list - List of your saved articles\n"
+                "/random - Get a list of random articles\n"
                 "/language - Change your language settings\n"
             ),
             "ru": (
@@ -44,6 +45,7 @@ class BaseCommands:
                 "/save <text> - Сохранить статью\n"
                 "/remove <text> - Убрать статью из сохранённых\n"
                 "/list - Список избранных статей\n"
+                "/random - Получить список случайных статей\n"
                 "/language - Изменить свои языковые настройки\n"
             )
         }

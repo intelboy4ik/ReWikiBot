@@ -1,3 +1,5 @@
+import random
+
 from bson import ObjectId
 from pymongo.errors import DuplicateKeyError
 from telebot import types
@@ -16,6 +18,7 @@ class ArticleCommands:
         self.bot.message_handler(commands=['remove'])(self.remove_command)
         self.bot.message_handler(commands=['list'])(self.list_command)
         self.bot.message_handler(commands=['search'])(self.search_command)
+        self.bot.message_handler(commands=['random'])(self.random_command)
         self.bot.callback_query_handler(func=lambda call: call.data.startswith("article_"))(
             self.article_callback_handler)
         self.bot.callback_query_handler(
@@ -111,6 +114,17 @@ class ArticleCommands:
 
         self.bot.reply_to(message, reply_text[user['language']], reply_markup=markup, parse_mode="Markdown")
 
+    def random_command(self, message):
+        user = check_user_registered(self.bot, self.db, message)
+        articles = list(self.db.articles.find())
+        articles = random.sample(articles, 10)
+        markup = self._build_articles_markup(articles, 0)
+        reply_text = {
+            "en": "Random articles:",
+            "ru": "Подборка случайных статей:"
+        }
+        self.bot.reply_to(message, text=reply_text[user["language"]], reply_markup=markup, parse_mode="Markdown")
+
     def article_callback_handler(self, call):
         user = check_user_registered(self.bot, self.db, call)
         article_id = call.data.split("_")[1]
@@ -192,7 +206,7 @@ class ArticleCommands:
 
     def edit_command(self, message):
         user = check_user_registered(self.bot, self.db, message)
-        if not user or not check_user_mod_status(seelf.bot, user, message):
+        if not user or not check_user_mod_status(self.bot, user, message):
             return
 
         name, content = parse_command_args(message)
